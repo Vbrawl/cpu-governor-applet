@@ -1,0 +1,6 @@
+{
+    "uuid": "cpu-governor@vbrawl",
+    "name": "CPU Governor",
+    "description": "View and change CPU governor",
+    "icon": "window-close"
+}
