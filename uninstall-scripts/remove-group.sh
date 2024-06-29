@@ -1,0 +1,3 @@
+GROUP="cpugovernorapplet"
+
+groupdel $GROUP
