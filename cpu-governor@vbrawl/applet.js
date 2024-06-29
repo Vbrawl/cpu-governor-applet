@@ -14,6 +14,9 @@ const GovernorSection = class GovernorSection extends PopupMenu.PopupMenuSection
         this._governor_label = new PopupMenu.PopupIndicatorMenuItem("CPU Governor: ");
         this.addMenuItem(this._governor_label);
 
+        this._separator = new PopupMenu.PopupSeparatorMenuItem();
+        this.addMenuItem(this._separator);
+
         this.governor_options = [];
         for (let i = 0; i < available_governors.length; i++) {
             const governor = available_governors[i];
