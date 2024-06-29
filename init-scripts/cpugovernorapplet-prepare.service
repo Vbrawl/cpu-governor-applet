@@ -1,0 +1,8 @@
+[Unit]
+Description=Prepare the system for CPU Governor Applet to work without being root.
+
+[Service]
+ExecStart=/usr/sbin/cpugovernorapplet_set-permissions.sh
+
+[Install]
+WantedBy=multi-user.target
