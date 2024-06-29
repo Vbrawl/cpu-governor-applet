@@ -3,7 +3,10 @@ const PopupMenu = imports.ui.popupMenu;
 const St = imports.gi.St;
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
+const FileUtils = imports.misc.fileUtils;
 const SignalManager = imports.misc.signalManager;
+
+const CPU_FREQUENCY_PATH = "/sys/devices/system/cpu/cpufreq/";
 
 
 const GovernorSection = class GovernorSection extends PopupMenu.PopupMenuSection {
@@ -39,36 +42,68 @@ const CPUGovernor = class CPUGovernor extends Applet.IconApplet {
     constructor(orientation, panel_height, instance_id) {
         super(orientation, panel_height, instance_id);
 
-        this._cpu_governor_path = "/sys/devices/system/cpu/cpufreq/policy0/scaling_governor";
-        this._cpu_available_governors_path = "/sys/devices/system/cpu/cpufreq/policy0/scaling_available_governors";
-        this.available_governors = this.get_available_governors();
-
-        /********************
-         * Setup Popup Menu *
-         ********************/
-        this._menu_manager = new PopupMenu.PopupMenuManager(this);
-        this._menu = new Applet.AppletPopupMenu(this, orientation);
-        this._menu_governor_section = new GovernorSection(this, this.available_governors, this.set_governor);
-        this._menu.addMenuItem(this._menu_governor_section);
-        this._menu_manager.addMenu(this._menu);
-
         this.set_applet_icon_name("logo");
         this.set_applet_tooltip("Change CPU Governor");
+
+
+        this._cpu_governor_paths = [];
+        const cpu_governor_dir = Gio.File.new_for_path(CPU_FREQUENCY_PATH);
+        FileUtils.listDirAsync(cpu_governor_dir, (paths) => {
+            for (let i = 0; i < paths.length; i++) {
+                const path = paths[i];
+                this._cpu_governor_paths.push(GLib.build_filenamev([CPU_FREQUENCY_PATH, path.get_name()]));
+            }
+
+            this._cpu_governor_paths.sort();
+            this.available_governors = this.get_available_governors();
+
+
+            /********************
+             * Setup Popup Menu *
+             ********************/
+            this._menu_manager = new PopupMenu.PopupMenuManager(this);
+            this._menu = new Applet.AppletPopupMenu(this, orientation);
+            this._menu_governor_section = new GovernorSection(this, this.available_governors, this.set_governor);
+            this._menu.addMenuItem(this._menu_governor_section);
+            this._menu_manager.addMenu(this._menu);
+        });
+
     }
 
     get_governor() {
-        return String(GLib.file_get_contents(this._cpu_governor_path)[1]).trim();
+        return String(GLib.file_get_contents(GLib.build_filenamev([this._cpu_governor_paths[0], "scaling_governor"]))[1]).trim();
     }
 
     set_governor(_this, governor) {
-        try {
-            GLib.file_set_contents_full(_this._cpu_governor_path, governor, GLib.FileSetContentsFlags.NONE, 0o0660);
+        for (let i = 0; i < _this._cpu_governor_paths.length; i++) {
+            try {
+                const path = GLib.build_filenamev([_this._cpu_governor_paths[i], "scaling_governor"]);
+                GLib.file_set_contents_full(path, governor, GLib.FileSetContentsFlags.NONE, 0o0660);
+            }
+            catch(e) { global.log(e); }
         }
-        catch(e) { global.log(e); }
     }
 
     get_available_governors() {
-        return String(GLib.file_get_contents(this._cpu_available_governors_path)[1]).trim().split(' ');
+        var available_governors = [];
+        for (let i = 0; i < this._cpu_governor_paths.length; i++) {
+            const path = GLib.build_filenamev([this._cpu_governor_paths[i], "scaling_available_governors"]);
+            const governors = String(GLib.file_get_contents(path)[1]).trim().split(' ');
+
+            if(i === 0) {
+                available_governors = governors;
+            }
+            else {
+                for (let g_i = 0; g_i < available_governors.length; g_i++) {
+                    const available_governor = available_governors[g_i];
+                    if(governors.findIndex((v, i, o) => {return v === available_governor;}) === -1) {
+                        available_governor.remove(available_governor);
+                        g_i-=1;
+                    }
+                }
+            }
+        }
+        return available_governors;
     }
 
     check_governor_update() {
