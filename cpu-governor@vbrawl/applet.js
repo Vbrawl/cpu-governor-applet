@@ -49,7 +49,7 @@ const CPUGovernor = class CPUGovernor extends Applet.IconApplet {
         this._menu.addMenuItem(this._menu_governor_section);
         this._menu_manager.addMenu(this._menu);
 
-        this.set_applet_icon_name("window-close");
+        this.set_applet_icon_name("logo");
         this.set_applet_tooltip("Change CPU Governor");
     }
 
