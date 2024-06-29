@@ -1,3 +1,4 @@
+#!/bin/sh
 USER="root"
 GROUP="cpugovernorapplet"
 
