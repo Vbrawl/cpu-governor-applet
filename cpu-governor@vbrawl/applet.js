@@ -15,8 +15,10 @@ const CPUGovernorManager = class CPUGovernorManager {
         const cpu_governor_dir = Gio.File.new_for_path(CPU_FREQUENCY_PATH);
         FileUtils.listDirAsync(cpu_governor_dir, (paths) => {
             for (let i = 0; i < paths.length; i++) {
-                const path = paths[i];
-                this._cpu_governor_paths.push(GLib.build_filenamev([CPU_FREQUENCY_PATH, path.get_name()]));
+                const path = paths[i].get_name();
+                if(path.startsWith("policy")) {
+                    this._cpu_governor_paths.push(GLib.build_filenamev([CPU_FREQUENCY_PATH, path]));
+                }
             }
             
             this._cpu_governor_paths.sort();
